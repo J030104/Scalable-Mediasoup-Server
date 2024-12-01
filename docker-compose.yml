@@ -1,0 +1,25 @@
+version: '3.5'
+
+services:
+    multi_server_sfu:
+        container_name: Multi-server-SFU
+        # image: "ubuntu_0721"
+        # This could be a pre-built image from a Docker registry,
+        # or it could be a local image you have already built.
+        # If a Dockerfile is present and a build context is provided,
+        # Docker Compose will build an image from the Dockerfile rather than 
+        # pulling an image from a registry
+        
+        build:
+            context: .
+        volumes:
+            - ./Complete_Example:/usr/code
+        restart: "always"
+        tty: true
+        ports:
+            - "3000:3000"
+            - "3001-3020:3001-3020"
+            - "4000:4000"
+            - "4001-4020:4001-4020"
+            - "5000:5000"
+            - "5001-5020:5001-5020"
