@@ -13,7 +13,7 @@ services:
         build:
             context: .
         volumes:
-            - ./Complete_Example:/usr/code
+            - ./code:/usr/code
         restart: "always"
         tty: true
         ports:
