@@ -1,3 +1,20 @@
+# Others
+ref_code/
+code/temp_2.js
+code/temp_3.js
+
+code/archive/
+
+# including:
+# original/
+# code/dual_SFU_prototype/
+# code/app_obsolete
+
+# code/server/*.md
+
+# Notes
+note*
+
 # Logs
 logs
 *.log
@@ -104,3 +121,4 @@ dist
 
 # TernJS port file
 .tern-port
+

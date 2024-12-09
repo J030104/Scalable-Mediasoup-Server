@@ -143,7 +143,7 @@ let peers = {}
 //   ...
 // }
 
-let transports = []     // [ { socketId1, roomName1, transport, consumer }, ... ] (consumer is a boolean)
+let transports = []     // [ { socketId1, roomName1, transport, isConsumer }, ... ]
 let producers = []      // [ { socketId1, roomName1, producer, }, ... ]
 let consumers = []      // [ { socketId1, roomName1, consumer, }, ... ]
 
@@ -189,12 +189,11 @@ const handleConnections = (connections, isThisNamespace) => {
         console.log(`NEW CONNECTION - Socket ID: ${socket.id}`)
         console.log("===============================================")
 
-        // Send back the socket id to the client
+        // Send the socket id back to the client
         socket.emit('connection-success', {
             socketId: socket.id,
         })
 
-        // Who triggers this?
         socket.on('disconnect', () => {
             // do some cleanup
             console.log('peer disconnected')
@@ -213,9 +212,6 @@ const handleConnections = (connections, isThisNamespace) => {
                     peers: rooms[roomName].peers.filter(socketId => socketId !== socket.id)
                 }
             }
-            // WRONG
-            // if (isThisNamespace) localParticipants.pop()
-            // console.log(`${localParticipants.length} person(s).`)
         })
 
         // Use async to make this process non-blocking
@@ -227,14 +223,14 @@ const handleConnections = (connections, isThisNamespace) => {
             // If a peer joins a room, record everything about them
             peers[socket.id] = {
                 socket,
-                roomName,           // Name for the Router this Peer joined
+                roomName,              // Name for the Router this Peer joined
                 transports: [],
                 producers: [],
                 consumers: [],
                 peerDetails: {
                     name: '',
-                    consumeHere, // Consume in this SFU
-                    isAdmin: false,   // Is this Peer the Admin?
+                    consumeHere,       // Consume in this SFU
+                    isAdmin: false,    // Is this Peer the Admin?
                 }
             }
 
@@ -280,145 +276,146 @@ const handleConnections = (connections, isThisNamespace) => {
             )
         })
 
-        // see client's socket.emit('transport-connect', ...)
-        socket.on('transport-connect', ({ dtlsParameters }, callback) => {
-            // console.log('DTLS Parameters: ', { dtlsParameters })
-            getTransport(socket.id).connect({ dtlsParameters })
-
-            // testing, client will establish connection with another server
-            // if (isThisNamespace) localParticipants.push("person") // WRONG
-            callback(SFUInfo)
-        })
-
-        // see client's socket.emit('transport-produce', ...)
-        socket.on('transport-produce', async ({ kind, rtpParameters, appData }, callback) => {
-            // call produce based on the prameters from the client
-            const producer = await getTransport(socket.id).produce({
-                kind,
-                rtpParameters,
+        if (isThisNamespace) { // Not all consumers need to produce.
+            // see client's socket.emit('transport-connect', ...)
+            socket.on('transport-connect', ({ dtlsParameters }, callback) => {
+                // console.log('DTLS Parameters: ', { dtlsParameters })
+                getTransport(socket.id).connect({ dtlsParameters })
+                
+                // testing, client will establish connection with another server
+                // if (isThisNamespace) localParticipants.push("person") // WRONG
+                callback(SFUInfo)
             })
 
-            // add producer to the producers array
-            const { roomName } = peers[socket.id]
-            addProducer(socket, producer, roomName, appData.servedByCurrSFU)
-            // console.log(servedByCurrSFU)
-
-            informConsumers(roomName, socket.id, producer.id)
-
-            // console.log('Producer ID: ', producer.id) // Already printed in `informConsumers` 
-            // console.log("Producer's kind: ", producer.kind) // Video and audio are different producers
-            console.log("-")
-
-            producer.on('transportclose', () => {
-                producer.close()
-                console.log(`The transport for producer ${producer.id} is closed.`)
-            })
-
-            try {
-                // Send back to the client the Producer's id
-                callback({
-                    id: producer.id,
-                    producersExist: producers.length > 1 ? true : false
+            // see client's socket.emit('transport-produce', ...)
+            socket.on('transport-produce', async ({ kind, rtpParameters, appData }, callback) => {
+                // call produce based on the prameters from the client
+                const producer = await getTransport(socket.id).produce({
+                    kind,
+                    rtpParameters,
                 })
-            } catch (error) {
-                console.log(error)
-            }
-        })
 
-        if (isThisNamespace) {
-            // Only local peers need this (used right after they first produce)
-            socket.on('getProducers', callback => {
-                //return all producer transports
+                // add producer to the producers array
                 const { roomName } = peers[socket.id]
+                addProducer(socket, producer, roomName)
+                // console.log(servedByCurrSFU)
 
-                let producerList = []
-                producers.forEach(producerData => {
-                    if (producerData.socketId !== socket.id && producerData.roomName === roomName) {
-                        producerList = [...producerList, producerData.producer.id]
-                    }
+                informConsumers(roomName, socket.id, producer.id)
+
+                // console.log('Producer ID: ', producer.id) // Already printed in `informConsumers` 
+                // console.log("Producer's kind: ", producer.kind) // Video and audio are different producers
+                console.log("-")
+
+                producer.on('transportclose', () => {
+                    producer.close()
+                    console.log(`The transport for producer ${producer.id} is closed.`)
                 })
 
-                // return the producer list back to the client
-                callback(producerList)
-            })
-
-            // see client's socket.emit('transport-recv-connect', ...)
-            socket.on('transport-recv-connect', async ({ dtlsParameters, serverConsumerTransportId }) => {
-                // console.log(`DTLS PARAMS: ${dtlsParameters}`)
-                const consumerTransport = transports.find(transportData => (
-                    transportData.isConsumer && transportData.transport.id == serverConsumerTransportId
-                )).transport
-                await consumerTransport.connect({ dtlsParameters })
-            })
-
-            socket.on('consume', async ({ rtpCapabilities, remoteProducerId, serverConsumerTransportId }, callback) => {
                 try {
-                    const { roomName } = peers[socket.id]
-                    const router = rooms[roomName].router
-                    let consumerTransport = transports.find(transportData => (
-                        transportData.isConsumer && transportData.transport.id == serverConsumerTransportId
-                    )).transport
-
-                    // check if the router can consume the specified producer ? the term
-                    if (router.canConsume({
-                        producerId: remoteProducerId,
-                        rtpCapabilities
-                    })) {
-                        // transport can now consume and return a consumer
-                        const consumer = await consumerTransport.consume({
-                            producerId: remoteProducerId,
-                            rtpCapabilities,
-                            paused: true,
-                        })
-
-                        consumer.on('transportclose', () => { // ?
-                            console.log('Transport closed from consumer')
-                        })
-
-                        consumer.on('producerclose', () => {
-                            console.log('A producer closed')
-                            socket.emit('producer-closed', { remoteProducerId })
-
-                            consumerTransport.close()
-                            transports = transports.filter(transportData => transportData.transport.id !== consumerTransport.id)
-                            consumer.close()
-                            consumers = consumers.filter(consumerData => consumerData.consumer.id !== consumer.id)
-                        })
-
-                        addConsumer(socket, consumer, roomName)
-
-                        // from the consumer extract the following params
-                        // to send back to the Client
-                        const params = {
-                            id: consumer.id,
-                            producerId: remoteProducerId,
-                            kind: consumer.kind,
-                            rtpParameters: consumer.rtpParameters,
-                            serverConsumerId: consumer.id,
-                        }
-
-                        // send the parameters to the client
-                        callback({ params })
-                    }
-                } catch (error) {
-                    console.log(error.message)
+                    // Send back to the client the Producer's id
                     callback({
-                        params: {
-                            error: error
-                        }
+                        id: producer.id,
+                        producersExist: producers.length > 1 ? true : false
                     })
+                } catch (error) {
+                    console.log(error)
+                }
+            })
+        }
+
+        // Only local peers need this (used right after they first produce)
+        socket.on('getProducers', callback => {
+            //return all producer transports
+            const { roomName } = peers[socket.id]
+
+            let producerList = []
+            producers.forEach(producerData => {
+                if (producerData.socketId !== socket.id && producerData.roomName === roomName) {
+                    producerList = [...producerList, producerData.producer.id]
                 }
             })
 
-            socket.on('consumer-resume', async ({ serverConsumerId }) => {
-                const { consumer } = consumers.find(consumerData => consumerData.consumer.id === serverConsumerId)
-                await consumer.resume()
-                // console.log(`Consumer ${serverConsumerId} resumed.`)
-                // setTimeout(async () => {
-                //     await consumer.resume()
-                // }, 2000)
-            })
-        }
+            // return the producer list back to the client
+            callback(producerList)
+        })
+
+        // see client's socket.emit('transport-recv-connect', ...)
+        socket.on('transport-recv-connect', async ({ dtlsParameters, serverConsumerTransportId }) => {
+            // console.log(`DTLS PARAMS: ${dtlsParameters}`)
+            const consumerTransport = transports.find(transportData => (
+                transportData.isConsumer && transportData.transport.id == serverConsumerTransportId
+            )).transport
+            await consumerTransport.connect({ dtlsParameters })
+        })
+
+        socket.on('consume', async ({ rtpCapabilities, remoteProducerId, serverConsumerTransportId }, callback) => {
+            try {
+                const { roomName } = peers[socket.id]
+                const router = rooms[roomName].router
+                let consumerTransport = transports.find(transportData => (
+                    transportData.isConsumer && transportData.transport.id == serverConsumerTransportId
+                )).transport
+
+                // check if the router can consume the specified producer ? the term
+                if (router.canConsume({
+                    producerId: remoteProducerId,
+                    rtpCapabilities
+                })) {
+                    // transport can now consume and return a consumer
+                    const consumer = await consumerTransport.consume({
+                        producerId: remoteProducerId,
+                        rtpCapabilities,
+                        paused: true,
+                    })
+
+                    consumer.on('transportclose', () => { // ?
+                        console.log('Transport closed from consumer')
+                    })
+
+                    consumer.on('producerclose', () => {
+                        console.log('A producer closed')
+                        socket.emit('producer-closed', { remoteProducerId })
+
+                        consumerTransport.close()
+                        transports = transports.filter(transportData => transportData.transport.id !== consumerTransport.id)
+                        consumer.close()
+                        consumers = consumers.filter(consumerData => consumerData.consumer.id !== consumer.id)
+                    })
+
+                    addConsumer(socket, consumer, roomName)
+
+                    // from the consumer extract the following params
+                    // to send back to the Client
+                    const params = {
+                        id: consumer.id,
+                        producerId: remoteProducerId,
+                        kind: consumer.kind,
+                        rtpParameters: consumer.rtpParameters,
+                        serverConsumerId: consumer.id,
+                    }
+
+                    // send the parameters to the client
+                    callback({ params })
+                }
+            } catch (error) {
+                console.log(error.message)
+                callback({
+                    params: {
+                        error: error
+                    }
+                })
+            }
+        })
+
+        socket.on('consumer-resume', async ({ serverConsumerId }) => {
+            const { consumer } = consumers.find(consumerData => consumerData.consumer.id === serverConsumerId)
+            await consumer.resume()
+            // console.log(`Consumer ${serverConsumerId} resum ed.`)
+            
+            // setTimeout(async () => {
+            //     await consumer.resume()
+            // }, 2000)
+        })
     })
 }
 
@@ -461,34 +458,10 @@ async function createWebRtcTransport(router) {
         try {
             // https://mediasoup.org/documentation/v3/mediasoup/api/#WebRtcTransportOptions
             const WebRtcTransport_options = {
-                // DEPRECATED: Use TransportListenInfo instead.
-                // listenIps: [
-                //     {
-                //         ip: '0.0.0.0', // replace with relevant IP address // ?
-                //         announcedIp: '10.0.0.115',
-                //     }
-                // ],
-                // If you use “0.0.0.0” or “::” as ip value, then you need to also provide announcedAddress
-                // announcedAddress is the IP address the client should connect to.
                 listenInfos: [
                     {
                         ip: '0.0.0.0',
-                        announcedAddress: IP, // Under same subnet, private IP can work
-
-                        // ip: '127.0.0.1', // This doesn't work
-                        // announcedAddress: '127.0.0.1', // This points to the local machine, works.
-
-                        /**
-                         * Wireless LAN adapter Wi-Fi:
-                         *    Connection-specific DNS Suffix  . :
-                         *    Link-local IPv6 Address . . . . . : fe80::be1d:215f:6f2a:cc1%21
-                         *    IPv4 Address. . . . . . . . . . . : 192.168.100.101
-                         *    Subnet Mask . . . . . . . . . . . : 255.255.255.0
-                         *    Default Gateway . . . . . . . . . : 192.168.100.1
-                         */
-
-                        // announcedAddress: '172.25.0.2', // Not exposed, only used in docker network
-                        // announcedAddress: '180.177.241.217', // Public IP doesn't if not registered
+                        announcedAddress: IP,
                     }
                 ],
                 enableUdp: true,
@@ -533,10 +506,10 @@ function addTransport(socket, transport, roomName, isConsumer) {
     }
 }
 
-function addProducer(socket, producer, roomName, servedByCurrSFU) {
+function addProducer(socket, producer, roomName) {
     producers = [
         ...producers,
-        { socketId: socket.id, producer, roomName, servedByCurrSFU }
+        { socketId: socket.id, producer, roomName}
     ]
 
     peers[socket.id] = {
@@ -569,13 +542,21 @@ function informConsumers(roomName, socketId, id) {
     console.log(`Socket: ${socketId}`)
 
     // let all consumers to consume this producer
-    producers.forEach(producerData => {
-        if (producerData.socketId !== socketId && producerData.roomName === roomName && producerData.servedByCurrSFU) {
-            const producerSocket = peers[producerData.socketId].socket
+    // producers.forEach(producerData => {
+    //     if (producerData.socketId !== socketId && producerData.roomName === roomName && producerData.servedByCurrSFU) {
+    //         const producerSocket = peers[producerData.socketId].socket
+    //         // use socket to send producer id to producer
+    //         producerSocket.emit('new-producer', { producerId: id })
+    //     }
+    // })
+    
+    consumers.forEach((consumerData) => {
+        if (consumerData.socketId !== socketId && consumerData.roomName === roomName) {
+            const producerSocket = peers[consumerData.socketId].socket;
             // use socket to send producer id to producer
-            producerSocket.emit('new-producer', { producerId: id })
+            producerSocket.emit("new-producer", { producerId: id });
         }
-    })
+    });
 }
 
 function getTransport(socketId) {
@@ -603,6 +584,6 @@ Object.keys(participantTypes).forEach(namespace => {
     handleConnections(participantTypes[namespace], namespace === thisNamespace);
 });
 
-// handleConnections(participantTypes['/SFU_1'], false)
+// handleConnections(participantTypes['/SFU_1'], true)
 // handleConnections(participantTypes['/SFU_2'], false)
-// handleConnections(participantTypes['/SFU_3'], true)
+// handleConnections(participantTypes['/SFU_3'], false)
