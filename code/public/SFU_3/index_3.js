@@ -60,14 +60,14 @@ let videoParams = { params };
 let consumingTransports = []; // ? should be dealt with when closing transport
 
 const joinRoom = (socket, isFirst) => {
-    socket.emit('joinRoom', { roomName, consumeHere: isFirst }, (data) => {
+    socket.emit('joinRoom', { roomName, isProducerHere: isFirst }, (data) => {
         console.log(`Router RTP Capabilities... ${data.rtpCapabilities}`)
-        rtpCapabilities = data.rtpCapabilities
+        rtpCapabilities = data.rtpCapabilities // Should be handled in fact
         if (isFirst) {
             // rtpCapabilities = data.rtpCapabilities
             createDevice()
         } else {
-            console.log("Joined different room.")
+            console.log("Joined room on different server.")
             // createSendTransport(socket, false)
             getProducers(socket)
         }
@@ -156,7 +156,7 @@ const createSendTransport = (socket) => {
                     
                     console.log(`Start establishing connection with other SFUs.`)
                     filteredSFUInfo.forEach(async (info) => { // Use async function to allow for await
-                        await new Promise((resolve) => setTimeout(resolve, 250)); // Sleep for 0.5 second
+                        // await new Promise((resolve) => setTimeout(resolve, 250)); // Sleep for 0.x second
                         
                         const new_socket = io(`${info.url}${info.namespace}`)
                         console.log(`==== Connecting to ${info.url}${info.namespace} ====`)
@@ -166,7 +166,10 @@ const createSendTransport = (socket) => {
                             joinRoom(new_socket, false)
                         })
 
-                        new_socket.on('new-producer', ({ producerId }) => signalNewConsumerTransport(new_socket, producerId))
+                        new_socket.on('new-producer', ({ producerId }) => {
+                            console.log("New producer from another server: ", producerId)
+                            signalNewConsumerTransport(new_socket, producerId)
+                        })
 
                         new_socket.on('producer-closed', ({ remoteProducerId }) => {
                             // server notification is received when a producer is closed
@@ -234,7 +237,7 @@ const connectSendTransport = async () => {
     // https://mediasoup.org/documentation/v3/mediasoup-client/api/#transport-produce
     // this action will trigger the 'connect' and 'produce' events above
     
-    videoProducer = await producerTransport.producerTransport.produce(videoParams);
+    videoProducer = await producerTransport.produce(videoParams);
     console.log("Video Producer created.")
 
     videoProducer.on('trackended', () => {
@@ -314,7 +317,7 @@ const getProducers = (socket) => {
         console.log("Producers in the room: ", producerIds)
         // for each of the producer create a consumer
         // producerIds.forEach(id => signalNewConsumerTransport(id))
-        producerIds.forEach(producerId => { signalNewConsumerTransport(socket_main, producerId) })
+        producerIds.forEach(producerId => { signalNewConsumerTransport(socket, producerId) })
     })
 }
 

@@ -17,10 +17,10 @@ const __dirname = path.resolve()
 // const localPeers = io.of('/currentSFU')
 // const remotePeers = io.of('/anotherSFU')
 
-const thisURL = 'https://140.118.138.130:3000'
-const nextURL = 'https://140.118.138.130:4000'
+const thisURL = 'https://140.118.138.79:3000'
+const nextURL = 'https://140.118.138.79:4000'
 const lastSFU = false
-const URLs = ['https://140.118.138.130:3000', 'https://140.118.138.130:4000', 'https://140.118.138.130:5000']
+const URLs = ['https://140.118.138.79:3000', 'https://140.118.138.79:4000', 'https://140.118.138.79:5000']
 const url = new URL(thisURL)
 const IP = url.hostname
 const port = url.port
@@ -37,7 +37,7 @@ const SFUInfo = namespaces.map((namespace, index) => ({
 
 // Testing
 const localParticipants = []
-const limit = 1 // When the limit is reached, redirect to the secondary SFU
+const limit = 2 // When the limit is reached, redirect to the secondary SFU
 
 // Middleware to parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -136,7 +136,7 @@ let peers = {}
 //      consumers: [id1, id2, ...],
 //      peerDetails: {
 //         name,
-//         consumeHere,
+//         isProducerHere,
 //         isAdmin,
 //      }
 //   },
@@ -215,7 +215,7 @@ const handleConnections = (connections, isThisNamespace) => {
         })
 
         // Use async to make this process non-blocking
-        socket.on('joinRoom', async ({ roomName, consumeHere }, callback) => {
+        socket.on('joinRoom', async ({ roomName, isProducerHere }, callback) => {
             // create Router if it does not exist
             // const router1 = rooms[roomName] && rooms[roomName].get('data').router || await createRoom(roomName, socket.id)
             const router1 = await createRoom(roomName, socket.id) // Use await to ensure the room is created before proceeding
@@ -229,7 +229,7 @@ const handleConnections = (connections, isThisNamespace) => {
                 consumers: [],
                 peerDetails: {
                     name: '',
-                    consumeHere,       // Consume in this SFU
+                    isProducerHere,       // Consume in this SFU
                     isAdmin: false,    // Is this Peer the Admin?
                 }
             }
@@ -422,7 +422,7 @@ const handleConnections = (connections, isThisNamespace) => {
 function numConsumers() {
     let count = 0;
     for (const peerId in peers) {
-        if (peers[peerId].peerDetails.consumeHere) {
+        if (peers[peerId].peerDetails.isProducerHere) {
             count++;
         }
     }
@@ -550,11 +550,11 @@ function informConsumers(roomName, socketId, id) {
     //     }
     // })
     
-    consumers.forEach((consumerData) => {
-        if (consumerData.socketId !== socketId && consumerData.roomName === roomName) {
-            const producerSocket = peers[consumerData.socketId].socket;
+    Object.values(peers).forEach((peerInfo) => {
+        if (peerInfo.socket.id !== socketId && peerInfo.roomName === roomName) {
+            const skt = peerInfo.socket;
             // use socket to send producer id to producer
-            producerSocket.emit("new-producer", { producerId: id });
+            skt.emit("new-producer", { producerId: id });
         }
     });
 }

@@ -2,12 +2,14 @@
   "name": "mediasoup_server",
   "version": "1.0.0",
   "description": "A highly scalable video conferencing system using Mediasoup (WebRTC)",
-  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon app.js",
     "watch0": "watchify public/index.js -o public/bundle.js -v",
-    "watchall": "watchify public/SFU_1/index_1.js -o public/SFU_1/bundle.js -v & watchify public/SFU_2/index_2.js -o public/SFU_2/bundle.js -v & watchify public/SFU_3/index_3.js -o public/SFU_3/bundle.js -v"
+    "watchall": "watchify public/SFU_1/index_1.js -o public/SFU_1/bundle.js -v & watchify public/SFU_2/index_2.js -o public/SFU_2/bundle.js -v & watchify public/SFU_3/index_3.js -o public/SFU_3/bundle.js -v",
+    "s1": "node app_1.js",
+    "s2": "node app_2.js",
+    "s3": "node app_3.js"
   },
   "author": "Amir Eshaq & Egg",
   "license": "ISC",
