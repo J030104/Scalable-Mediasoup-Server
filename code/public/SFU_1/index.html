@@ -1,81 +1,93 @@
-<!DOCTYPE html>
-<html lang="en">
+<html>
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Meet Clone</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        button {
+            margin: 2;
+        }
+
+        tr {
+            vertical-align: top;
+        }
+
+        video {
+            width: 360px;
+            background-color: black;
+            padding: 10;
+            margin: 1px 1px;
+        }
+
+        .mainTable {
+            /* ? */
+            width: 100%;
+        }
+        
+        .localColumn {
+            width: 246px;
+        }
+
+        .remoteColumn {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        #localVideo {
+            width: 360;
+        }
+
+        .remoteVideo {
+            float: left;
+        }
+
+        .videoWrap {
+            margin: 3;
+            /* padding: 5; */
+            /* background-color: papayawhip; */
+            display: flex;
+            justify-content: center;
+        }
+
+        @media only screen and (max-width: 1060px) {
+            .video {
+                width: 300px;
+            }
+        }
+
+        @media only screen and (max-width: 940px) {
+            .video {
+                width: 240px;
+            }
+        }
+    </style>
 </head>
+
 <body>
-    <div style="position: fixed;">
-        <button id="add-video-btn">+</button>
-        <button id="delete-random-video" class="deleteButton">-</button>
-    </div>
+    <div id="video">
+        <table class="mainTable">
+            <tbody>
+                <tr>
+                    <td class="localColumn">
+                        <video id="localVideo" autoplay class="video" muted></video>
+                    </td>
+                    <td class="remoteColumn">
+                        <div id="videoContainer"></div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
 
-    <div id="app">
-        <header class="app-header">
-            <h1></h1>
-        </header>
-
-        <!-- Simulate add & remove video button -->
-        <div class="pagingController">
-            <button class="pagingButton previous">
-                <svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M13 2L7 10l6 8" stroke="white" stroke-width="2" fill="none"/>
-                </svg>
-            </button>
-            <button class="pagingButton next">
-                <svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M7 2l6 8-6 8" stroke="white" stroke-width="2" fill="none"/>
-                </svg>
-            </button>
-        </div>
-
-        <div id="videoPanel">
-            <div class="localColumn">
-                <video id="localVideo" autoplay class="video" muted></video>
-            </div>
-            <div id="remoteColumn">
-                <div id="videoContainer">
-                    <!-- Remote videos will be added here dynamically -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Control panel -->
-        <footer class="app-footer">
-            <div class="control-panel" >
-                <button class="control-btn btn-video video-off">
-                    <img class="icon-24" src="./src/assets/video-off.png"/>
-                </button>
-                <button class="control-btn btn-audio unmuted">
-                    <img class="icon-24" src="./src/assets/mute.png"/> 
-                </button>
-                <button class="control-btn btn-invite">
-                    <img class="icon-24" src="./src/assets/invite.png"/>
-                </button>
-                <button class="control-btn btn-leave">
-                    <img class="icon-24" src="./src/assets/phone.png"/>
-                </button>
-            </div>
-        </footer>
-    </div>
-
-    <!-- Invite Modal -->
-    <div id="inviteModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <span class="btn-close">&times;</span>
-            <h2>Invite Others</h2>
-            <p>Copy the URL below to invite others to join:</p>
-            <div class="url-container">
-                <input type="text" class="url-input" id="inviteURL" readonly />
-                <button class="btn-copy" id="copyURLButton">Copy</button>
-                <div id="copyNotification" class="notification">URL copied to clipboard!</div>
-            </div>
-        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </body>
-<script src="bundle.js"></script>
-<script type="module" src="script.js"></script>
+<footer>
+    <script src="bundle.js"></script>
+</footer>
+
 </html>
