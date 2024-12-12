@@ -28,6 +28,22 @@ const Update = () => {
     page.updateButtonVisibility();
 }
 
+// Create a MutationObserver
+const observer = new MutationObserver((mutationsList) => {
+    for (const mutation of mutationsList) {
+        if (mutation.type === 'childList') {
+            console.log('Child list changed: added or removed nodes');
+            Update();
+        }
+    }
+});
+
+// Observer configuration to watch for child nodes changes
+const config = {
+    childList: true, // Listen for child elements being added or removed
+    subtree: false   // Set to true if you want to monitor all descendant elements
+};
+
 const Initialize = () => {
     // Recalculate layout on window resize
     window.addEventListener('resize', Update);
@@ -47,24 +63,6 @@ const Initialize = () => {
     // Add event listeners for the buttons
     document.addEventListener('DOMContentLoaded', button.addControlButtonEvent);
 
-
-    // Add event listener to the mute button
-    document.addEventListener('DOMContentLoaded', async () => {
-        const videoElement = document.getElementById('localVideo');
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            videoElement.srcObject = stream;
-
-            // Attach event listener to the video button
-            const videoButton = document.querySelector('.btn-video');
-            if (videoButton) {
-                videoButton.addEventListener('click', button.toggleVideo);
-            }
-        } catch (error) {
-            console.error("Error accessing media devices:", error);
-        }
-    });
-
     // Add event listener to the mute button
     document.addEventListener('DOMContentLoaded', () => {
         const closeBtn = document.querySelector('.btn-close');
@@ -72,7 +70,11 @@ const Initialize = () => {
         closeBtn.addEventListener('click', button.closeInviteModal);
         copyBtn.addEventListener('click', button.copyInviteURL);
     });
-    
+
+    const videoContainer = document.getElementById('videoContainer');
+
+    // Start observing the videoContainer
+    observer.observe(videoContainer, config);
 }
 
 Initialize();

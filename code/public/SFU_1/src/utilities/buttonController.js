@@ -20,12 +20,12 @@ export default class ButtonController {
      // Mute or unmute the video
      toggleMute = () => {
         const videoElement = document.getElementById('localVideo');
-        videoElement.muted = !videoElement.muted;
+        videoElement.srcObject.getAudioTracks()[0].enabled = !videoElement.srcObject.getAudioTracks()[0].enabled;
         // Update the button icon
         const muteButton = document.querySelector('.btn-audio');
         const muteButtonImg = document.querySelector('.btn-audio img');
         // Change background color dynamically
-        if (videoElement.muted) {
+        if (videoElement.srcObject.getAudioTracks()[0].enabled) {
             muteButton.classList.add('unmuted'); // Add a class for unmuted state
             muteButton.classList.remove('muted'); // Remove muted state
             muteButtonImg.src = "./src/assets/mute.png";
