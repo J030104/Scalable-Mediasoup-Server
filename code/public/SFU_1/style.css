@@ -1,0 +1,389 @@
+:root {
+    --video-width: 100%; /* Default to full width */
+    --video-height: 100vh; /* Default to full height */
+    --video-margin: 5px; /* Default margin between videos */
+    --video-panel-height: calc(100% - 80px); /* Default to full height */
+    --header-height: 24px; /* Default header height */
+    --footer-height: 72px; /* Default footer height */
+    --bg-color: #202020; /* Default background color */
+    --pimary-btn-color: #333; /* Default primary color */
+    --pimary-btn-hover-color: #555; /* Default primary hover color */
+    --header-bg-color: #202022; /* Default header background color */
+    --footer-bg-color: #202022; /* Default footer background color */
+    --red-btn-color: #f44336; /* Default red button color */
+    --red-btn-hover-color: #d32f2f; /* Default red button hover color */
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+body {
+    font-family: Arial, sans-serif;
+}
+
+video {
+    background-color: black;
+    padding: 10px;
+    margin: 1px;
+    max-width: 100%; /* Video cannot exceed the width of #videoPanel */
+    max-height: 100%; /* Video cannot exceed the height of #videoPanel */
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.app-header {
+    background-color: var(--header-bg-color);
+    color: white;
+    text-align: center;
+    padding: 10px;
+    font-size: 12px;
+    height: var(--header-height);
+}
+
+#videoPanel {
+    display: flex;
+    flex-wrap: wrap; /* Allow videos to wrap if needed */
+    justify-content: center; /* Center videos horizontally */
+    align-items: center; /* Center videos vertically */
+    overflow: hidden; /* Ensure content doesn't overflow */
+    position: relative; /* For dynamic sizing */
+    width: 100%; /* Ensure it takes full available width */
+    height: 100%; /* Ensure it takes full available height */
+    background-color: var(--bg-color);
+    min-height: calc(100vh - var(--header-height) - var(--footer-height)); /* Set a minimum height */
+    z-index: -1;
+}
+
+#localVideo {
+    position: absolute;
+    right: 20px;
+    bottom: 20px;
+    border-radius: 5px;
+    border: 0.2px solid #ccc;
+    z-index: 2;
+    width: 320px; /* Set desired width */
+    height: 180px; /* Maintain 16:9 aspect ratio */
+    object-fit: cover; /* Ensures video fits the element size */
+    margin: 0;
+    padding: 0;
+}
+
+#remoteColumn {
+    width: 100%;
+    height: 100%;
+    background: none;
+    display: flex;
+    flex-wrap: wrap; /* Allow videos to wrap if needed */
+    justify-content: center; /* Center videos horizontally */
+    align-items: center; /* Center videos vertically */
+    position: absolute;
+} 
+
+#videoContainer {
+    display: grid;
+    gap: 10px;
+    margin: 10px;
+}
+
+#add-video-btn {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+    position: fixed;
+    z-index: 10;
+    margin-top: 10px;
+    right:10px
+}
+
+#add-video-btn:hover {
+    background-color: #45a049;
+}
+
+.deleteButton {
+    background-color: #8b0000;
+    padding: 10px 20px;
+    color: white;
+    cursor: pointer;
+    position: fixed;
+    left: 10px;
+    margin-top: 10px;
+    z-index: 10;
+}
+
+.deleteButton:hover {
+    background-color: red;
+}
+
+
+#videoContainer .small-video {
+    width: var(--video-width);
+    height: var(--video-height);
+    border-radius: 20px;
+    transition: all 0.3s ease; /* Smooth transition for size changes */
+    object-fit: cover; /* Ensures video fits the element size */
+}
+
+.pagingButton {
+    background-color: var(--header-bg-color); /* Dark gray background */
+    border: none;
+    border-radius: 50%;  /* Make the button circular */
+    color: white;  /* White color for the icon */
+    font-size: 30px;  /* Adjust the size of the icon */
+    width: 50px;  /* Button width */
+    height: 50px;  /* Button height */
+    visibility: hidden; /* This hides the button without removing its layout space */
+    z-index: 9999; /* Ensure it's above the videos */
+}
+
+.pagingButton:not(.hidden) {
+    visibility: visible; /* Visible when not marked as hidden */
+}
+
+.pagingButton:hover {
+    background-color: var(--pimary-btn-hover-color);  /* Darker gray when hovered */
+}
+
+.pagingButton.previous {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-radius: 50%;
+}
+
+.pagingButton.next {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-radius: 50%;
+}
+
+.icon-16 {
+    width: 16px;
+    height: 16px;
+}
+
+.icon-24 {
+    width: 24px;
+    height: 24px;
+}
+
+.icon-32 {
+    width: 32px;
+    height: 32px;
+}
+
+.app-footer {
+    width: 100%;
+    height: var(--footer-height);
+    background-color: var(--footer-bg-color);
+    color: white;
+    padding: 10px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.control-panel {
+    width: 300px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.control-btn {
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+}
+
+.btn-video.video-off {
+    background-color: var(--pimary-btn-color);
+}
+
+
+.btn-video.video-off:hover {
+    background-color: var(--pimary-btn-hover-color);
+}
+
+.btn-video.video-on {
+    background-color: var(--red-btn-color);
+}
+
+.btn-video.video-on:hover {
+    background-color: var(--red-btn-hover-color);
+}
+
+.btn-audio.unmuted {
+    background-color: var(--pimary-btn-color);
+}
+
+.btn-audio.unmuted:hover {
+    background-color: var(--pimary-btn-hover-color);
+}
+
+/* Muted state */
+.btn-audio.muted {
+    background-color: var(--red-btn-color); /* Normal state */
+}
+
+.btn-audio.muted:hover {
+    background-color: var(--red-btn-hover-color); /* Hover state */
+}
+
+
+.btn-leave {
+    background-color: var(--red-btn-color);
+}
+
+.btn-leave:hover {
+    background-color: var(--red-btn-hover-color);
+}
+
+.btn-invite {
+    background-color: #4CAF50;
+}
+
+.btn-invite:hover {
+    background-color: #3f9443;
+}
+
+/* Modal Background */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Modal Content */
+.modal-content {
+    background-color: white;
+    margin: 15% auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 500px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Close Button */
+.btn-close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.btn-close:hover {
+    color: black;
+}
+
+/* URL Input and Copy Button */
+.url-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 15px;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.url-input {
+    flex: 1;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.btn-copy {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.btn-copy:hover {
+    background-color: #45a049;
+}
+
+.notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    background-color: #4caf50; /* Green background */
+    color: white;
+    font-size: 14px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    display: none; /* Initially hidden */
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.notification.show {
+    display: block;
+    transform: translateY(0);
+}
+
+
+
+
+/* Responsive adjustments */
+@media (max-width: 1060px) {
+    :root {
+        --video-width: 100%;
+    }
+}
+
+@media (max-width: 940px) {
+    :root {
+        --video-width: 100%;
+    }
+}
+
+@media (max-width: 1060px) {
+    #localVideo {
+        width: 240px;
+    }
+    .small-video {
+        width: 240px;
+    }
+}
+
+@media (max-width: 940px) {
+    #localVideo {
+        width: 220px;
+    }
+    .small-video {
+        width: 220px;
+    }
+}
