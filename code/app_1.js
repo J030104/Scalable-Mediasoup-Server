@@ -24,7 +24,7 @@ const URLs = ['https://140.118.138.79:3000', 'https://140.118.138.79:4000', 'htt
 const url = new URL(thisURL)
 const IP = url.hostname
 const port = url.port
-const rtcPorts = [3001, 3020]
+const rtcPorts = [3001, 3100]
 
 const staticFileFolderName = 'SFU_1'
 const thisNamespace = '/' + staticFileFolderName
@@ -37,7 +37,7 @@ const SFUInfo = namespaces.map((namespace, index) => ({
 
 // Testing
 const localParticipants = []
-const limit = 2 // When the limit is reached, redirect to the secondary SFU
+const limit = 3 // When the limit is reached, redirect to the secondary SFU
 
 // Middleware to parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: true }));

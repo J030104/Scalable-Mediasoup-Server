@@ -23039,7 +23039,7 @@ const joinRoom = (socket, isFirst) => {
 const streamSuccess = (stream) => {
     localVideo.srcObject = stream // Where is the localVideo defined? 
 
-    // audioParams = { track: stream.getAudioTracks()[0], ...audioParams };
+    audioParams = { track: stream.getAudioTracks()[0], ...audioParams };
     videoParams = { track: stream.getVideoTracks()[0], ...videoParams };
 
     joinRoom(socket_main, true)
@@ -23047,7 +23047,7 @@ const streamSuccess = (stream) => {
 
 const getLocalStream = () => {
     navigator.mediaDevices.getUserMedia({
-        audio: false,
+        audio: true,
         video: {
             width: {
                 min: 640,
@@ -23201,6 +23201,8 @@ const connectSendTransport = async () => {
     
     videoProducer = await producerTransport.produce(videoParams);
     console.log("Video Producer created.")
+    audioProducer = await producerTransport.produce(audioParams);
+    console.log("Audio Producer created.")
 
     videoProducer.on('trackended', () => {
         console.log('Video track ended')
@@ -23214,6 +23216,17 @@ const connectSendTransport = async () => {
         // videoProducer.close()
     })
 
+    audioProducer.on('trackended', () => {
+        console.log('Audio track ended')
+        // close video track
+        // videoProducer.close()
+    })
+
+    audioProducer.on('transportclose', () => {
+        console.log('Audio transport closed')
+        // close video track
+        // videoProducer.close()
+    })
 }
 
 // ********************************************************************************
@@ -23328,10 +23341,13 @@ const connectRecvTransport = async (socket, consumerTransport, remoteProducerId,
             } else {
                 //append to the video container
                 newElem.setAttribute('class', 'remoteVideo')
-                newElem.innerHTML = '<video id="' + remoteProducerId + '" autoplay class="video"></video>'
+                newElem.innerHTML = '<video id="' + remoteProducerId + '" autoplay class="video small-video"></video>'
             }
-
-            videoContainer.appendChild(newElem)
+            
+            if (!document.getElementById(`td-${remoteProducerId}`)) {
+                videoContainer.appendChild(newElem)
+            }
+            // videoContainer.appendChild(newElem)
 
             // destructure and retrieve the video track from the producer
             const { track } = consumer
