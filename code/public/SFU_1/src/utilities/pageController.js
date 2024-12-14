@@ -23,10 +23,16 @@ export default class PageController {
         this.updateButtonVisibility();
     }
 
+    getRemoteVideoCount = () => {
+        const remoteVideoContainer = document.getElementById("videoContainer");
+        const videoCount = Array.from(remoteVideoContainer.children).filter(child => child.classList.contains('remoteVideo')).length;
+        return videoCount;
+    }
+
     // Update derived values when relevant properties are modified
     updateDerivedValues = () => {
         this.maxVideosPerPage = this.maxColumns * this.maxRows;
-        const videoCount = document.getElementById("videoContainer").children.length;
+        const videoCount = this.getRemoteVideoCount();
         this.totalPages = Math.max(1, Math.ceil(videoCount / this.maxVideosPerPage));
     };
 
@@ -44,18 +50,18 @@ export default class PageController {
         const root = document.documentElement;
         const remoteVideoContainer = document.getElementById("videoContainer");
         const remoteColumn = document.getElementById("remoteColumn");
-        const videoCount = remoteVideoContainer.children.length;
+        const videoCount = this.getRemoteVideoCount();
         const gap = 10;
 
         // Get video panel dimensions
         const containerWidth = remoteColumn.clientWidth;
         const containerHeight = remoteColumn.clientHeight;
-        // console.log(`Panel Width: ${containerWidth}, Panel Height: ${containerHeight}`);
+        console.log(`Panel Width: ${containerWidth}, Panel Height: ${containerHeight}`);
 
         // // Calculate rows based on the number of videos and maxColumns
         this.rows = Math.min(Math.ceil(Math.sqrt(videoCount)), this.rows) || 1;
         this.columns =  Math.ceil(videoCount / this.rows) || 1;
-        // console.log(`Columns: ${this.columns}, Rows: ${this.rows}`);
+        console.log(`Columns: ${this.columns}, Rows: ${this.rows}`);
 
         let maxVideoWidth, maxVideoHeight, width, height;
 
@@ -66,6 +72,9 @@ export default class PageController {
         this.updateDerivedValues();
         this.columns = Math.min(this.columns, this.maxColumns);
         this.rows = Math.min(Math.ceil(videoCount / this.columns), this.maxRows);
+        console.log(`Max Columns: ${this.maxColumns}, Max Rows: ${this.maxRows}, MaxPerPage: ${this.maxVideosPerPage}`);
+        console.log(`Columns: ${this.columns}, Rows: ${this.rows}`);
+        
 
         // Dynamically adjust columns and rows to fit within the panel
         while (true) {
@@ -108,21 +117,31 @@ export default class PageController {
         root.style.setProperty("--video-height", `${height}px`);
 
         // Paginate videos
-        const videos = Array.from(remoteVideoContainer.children); // Convert NodeList to Array
-        videos.forEach((video, index) => {
+        const videos = Array.from(remoteVideoContainer.children).filter(child => child.classList.contains('remoteVideo')); // Convert NodeList to Array
+        videos.forEach((element, index) => {
             const startIndex = this.currentPage * this.maxVideosPerPage;
             const endIndex = startIndex + this.maxVideosPerPage;
         
             // Show videos for the current page, hide others
             if (index >= startIndex && index < endIndex) {
-                video.style.display = 'block';
+                element.classList.add('show');
+                element.classList.remove('hidden');
             } else {
-                video.style.display = 'none';
+                element.classList.remove('show');
+                element.classList.add('hidden');
             }
-        });        
-
+        });     
+        const audios = remoteVideoContainer.querySelectorAll('audio');
+        audios.forEach(audio => {
+            const parentDiv = audio.parentElement;
+            if (parentDiv) {
+                parentDiv.classList.add('hidden');
+            }
+        });
+        
         // Update grid layout dynamically
         remoteVideoContainer.style.gridTemplateColumns = `repeat(${this.columns}, 1fr)`;
+        remoteVideoContainer.style.gridTemplateRows = `repeat(${this.rows}, 1fr)`;
     };
 
     updateButtonVisibility = () => {
@@ -130,7 +149,7 @@ export default class PageController {
         const nextButton = document.querySelector('.pagingButton.next');
         const remoteVideoContainer = document.getElementById("videoContainer");
     
-        const videoCount = remoteVideoContainer.children.length;
+        const videoCount = this.getRemoteVideoCount();
     
         // Calculate the total number of pages
         this.totalPages = Math.ceil(videoCount / this.maxVideosPerPage);
@@ -144,8 +163,7 @@ export default class PageController {
 
     // Handle page navigation
     goToPage = (goto) => {
-        const remoteVideoContainer = document.getElementById("videoContainer");
-        const videoCount = remoteVideoContainer.children.length;
+        const videoCount = this.getRemoteVideoCount();
 
         // Calculate the total number of pages
         const totalPages = Math.ceil(videoCount / this.maxVideosPerPage);

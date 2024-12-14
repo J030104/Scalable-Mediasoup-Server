@@ -33,6 +33,7 @@ video {
     max-height: 100%; /* Video cannot exceed the height of #videoPanel */
 }
 
+
 #app {
     display: flex;
     flex-direction: column;
@@ -108,6 +109,14 @@ video {
     background-color: #45a049;
 }
 
+.show {
+    display: block;
+}
+
+.hidden { 
+    display: none; 
+}
+
 .deleteButton {
     background-color: #8b0000;
     padding: 10px 20px;
@@ -129,7 +138,10 @@ video {
     height: var(--video-height);
     border-radius: 20px;
     transition: all 0.3s ease; /* Smooth transition for size changes */
-    object-fit: cover; /* Ensures video fits the element size */
+    /* object-fit: cover; */
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
 }
 
 .pagingButton {
@@ -192,6 +204,8 @@ video {
     display: flex;
     justify-content: center;
     align-items: center;
+    bottom: 0;
+    position: fixed;
 }
 
 .control-panel {
@@ -286,6 +300,7 @@ video {
     max-width: 500px;
     text-align: center;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    z-index: 1001;
 }
 
 /* Close Button */
